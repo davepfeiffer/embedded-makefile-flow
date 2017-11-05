@@ -1,10 +1,10 @@
 # Embedded Work-flow Example
 
-This repository is a _basic_ guide for setting up an open tool-chain for embedded software development. There are lots of great resources on the internet for setting up tools, but not many examples. This repository should serve as a jumping off point to other resources specific to the components.
+This repository is a _basic_ guide for setting up an open tool-chain for embedded software development. There are lots of great resources on the internet for setting up tools, but not many examples. This repository should serve to help (the many) people who learn by example as well as a jumping off point to other resources specific to the components.
 
 The example used will be a [STM32F031 Nucleo-32 board](https://www.amazon.com/gp/product/B01DTEWJWK/ref=as_li_tl?ie=UTF8&camp=1789&creative=9325&creativeASIN=B01DTEWJWK&linkCode=as2&tag=davemp-20&linkId=620bf7356a578e0dee2850d0e30cb0fe).
 
-This guide assumes a unix-like operating system.
+This guide assumes a UNIX-like operating system.
 
 # Contents / Compendium
 
