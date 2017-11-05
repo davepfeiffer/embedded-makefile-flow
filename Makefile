@@ -79,7 +79,7 @@ $(BIN)/init.o: $(ARC)/system_stm32f0xx.c
 
 # OpenOCD command to program a board
 program: $(HEX)
-	@sudo -E $(OCD) -f $(INTRF) -f $(TARGT) -c "program $(ELF) verify reset exit"
+	@sudo -E $(OCD) -f $(INTRF) -f $(TARGT) -c "program $(HEX) verify reset exit"
 
 # OpenOCD command to load a program and launch GDB
 debug: $(ELF)

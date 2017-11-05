@@ -58,9 +58,9 @@ _note:_ The seeming nonsense in `arm-none-eabi-gcc` stands for:
 
 Install the tool-chain using your system's package manager (sorry windows users).
 
-For compiling source files a command of the following for will be used:
+For compiling source files, a command of the following form will be used:
 
-`arm-none-eabi-gcc -c <other-flags> <source-file>. -o <output-name>.o`
+`arm-none-eabi-gcc -c <other-flags> <source-file> -o <output-name>.o`
 
 - The `-c` flag tells gcc not to perform any linking yet.
 
@@ -68,7 +68,7 @@ There will be platform specific flags that you will need to dig up. In this case
 
 - `-mcpu=cortex-m0`: to tell gcc our target CPU's architecture
 
-- `-mthumb`: to tell gcc only to use the thumb instruction set (ARM has multiple ISAs) and the [cortex-m0](https://developer.arm.com/products/processors/cortex-m/cortex-m0-plus) only supports Thumb/Thumb-2 instructions.
+- `-mthumb`: to tell gcc only to use the thumb instruction set (ARM has multiple ISAs and the [cortex-m0](https://developer.arm.com/products/processors/cortex-m/cortex-m0-plus) only supports Thumb/Thumb-2 instructions).
 
 - `-msoft-float`: to tell gcc that our target has no floating point unit (FPU) and float operations need to be simulated by other instructions.
 
@@ -104,7 +104,7 @@ For our specific board, the linker script was lifted and modified from a [blog](
 
 For linking gcc will be used again but with a different set of flags. Because the required device information is in the linker script and object files, we don't need many flags at all.
 
-`arm-none-eabi-gcc -T <linker-script>.ld --specs=nosys.specs`
+`arm-none-eabi-gcc -T <linker-script>.ld --specs=nosys.specs <intermediate-objects> -o <output>.elf`
 
 - `-T <linker-script>.ld`: tell gcc where to find the linker script
 
@@ -137,7 +137,7 @@ The quick and dirty and guide is:
     sudo kill openocd
   ```
 
-  * launch OpenOCD process
+  * launch an OpenOCD process
 
   * connect to the st-link's gdb server and load the debug symbols
 
@@ -157,6 +157,6 @@ Don't waste time by losing, overwriting, and transporting pieces of your project
 
 [Tutorial](https://try.github.io/levels/1/challenges/1)
 
-[Makefile]: asdf
+[Makefile]: https://github.com/davepfeiffer/embedded-makefile-flow/blob/master/Makefile
 
-[compendium][]
+[compendium]: https://github.com/davepfeiffer/embedded-makefile-flow#contents--compendium
