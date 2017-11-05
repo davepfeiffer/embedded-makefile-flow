@@ -15,8 +15,7 @@ CC=arm-none-eabi-gcc
 # Device specific flags [1]
 DFLAGS=-mcpu=cortex-m0 -mthumb -msoft-float
 # Compiler flags
-CFLAGS=$(DFLAGS) -g -c -Wall -Wextra -fdata-sections -ffunction-sections
-CFLAGS += -std=gnu99 --specs=nosys.specs
+CFLAGS=$(DFLAGS) -g -c -Wall -Wextra
 
 # Linker
 LD=arm-none-eabi-gcc
@@ -25,8 +24,7 @@ LD=arm-none-eabi-gcc
 LSCRIPT=$(ARC)/stm32f031k6.ld
 
 # Linker flags
-LFLAGS=$(DFLAGS) -T $(LSCRIPT)
-LFLAGS += --specs=nosys.specs
+LFLAGS=-T $(LSCRIPT) --specs=nosys.specs
 
 # Object copy (for converting formats)
 OBJCOPY=arm-none-eabi-objcopy
@@ -40,7 +38,7 @@ DBG=arm-none-eabi-gdb
 # OpenOCD
 OCD=openocd
 
-# Debugger/Programmer configuration file
+# Debug/programming interface configuration file
 INTRF=interface/stlink-v2-1.cfg
 # Target device configurations file
 TARGT=/usr/share/openocd/scripts/target/stm32f0x.cfg
@@ -52,9 +50,9 @@ HEX=$(BIN)/blink.hex
 ELF=$(BIN)/blink.elf
 
 # All intermediate object files
-OBJ=$(BIN)/blink.o $(ARC)/boot_stm32f0xx.o $(BIN)/init.o
+OBJ=$(BIN)/blink.o $(BIN)/boot.o $(BIN)/init.o
 
-#-- These rules for the finally binaries will usually not require modiciation
+#-- These rules for the finally binaries will usually not require modification
 
 # Convert the ELF into intel hex format
 $(HEX): $(ELF)
@@ -67,7 +65,7 @@ $(ELF): $(OBJ)
 #-- These rules will vary depending on the program being built
 
 # Compile the main file
-$(BIN)/blink.o: $(SRC)/blink.c $(ARC)/stm32f031x6.h
+$(BIN)/blink.o: $(SRC)/blink.c $(ARC)/stm32f0xx.h
 	$(CC) $(CFLAGS) $(SRC)/blink.c -o $(BIN)/blink.o
 
 # Compile the reset handler
@@ -85,13 +83,18 @@ program: $(HEX)
 
 # OpenOCD command to load a program and launch GDB
 debug: $(ELF)
-	$(DBG) $(ELF) -ex "target remote localhost:3333; load"
+	@(sudo -E $(OCD) -f $(INTRF) -f $(TARGT) &); \
+	$(DBG) $(ELF) -ex "target remote localhost:3333; load"; \
+	sudo kill $(OCD)
 
+# Build the entire program
 all: $(HEX)
 
+# Delete all of the generated files
 clean:
 	rm $(OBJ) $(HEX) $(ELF)
 
+# Delete all intermediate object files
 tidy:
 	rm $(OBJ)
 

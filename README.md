@@ -6,6 +6,8 @@ This guide assumes a UNIX-like operating system.
 
 # Contents / Compendium
 
+Below are the topics covered, and some links to related resources:
+
   - Cross-Compiler
 
     * [OSDev Wiki](http://wiki.osdev.org/GCC_Cross-Compiler)
@@ -44,9 +46,9 @@ This guide assumes a UNIX-like operating system.
 
 # Cross-Compiler
 
-The first step for setting up any software tool-chain is picking a compiler. Because your desktop likely isn't using the same architecture as your target device, you will need to use a cross-compiler. GCC is the most used and sometimes the only option for specific architectures, but LLVM is making gains. This guide will be using GCC, specifically `arm-none-eabi-gcc`.
+The first step for setting up any software tool-chain is the compiler. Because your desktop likely isn't using the same architecture as your target device, you will need to use a cross-compiler. GCC is the most used and sometimes the only option for specific architectures, but LLVM is making gains. This guide will be using GCC, specifically `arm-none-eabi-gcc`.
 
-_note:_ The seemingly nonsense in `arm-none-eabi-gcc` stands for:
+_note:_ The seeming nonsense in `arm-none-eabi-gcc` stands for:
 
   - `arm`: architecture -- arm
 
@@ -56,7 +58,37 @@ _note:_ The seemingly nonsense in `arm-none-eabi-gcc` stands for:
 
 Install the tool-chain using your system's package manager (sorry windows users).
 
-See the Makefile section for specific commands.
+For compiling source files a command of the following for will be used:
+
+`arm-none-eabi-gcc -c <other-flags> <source-file>. -o <output-name>.o`
+
+- The `-c` flag tells gcc not to perform any linking yet.
+
+There will be platform specific flags that you will need to dig up. In this case we can consult the gcc [documentation](https://gcc.gnu.org/onlinedocs/gcc-2.95.3/gcc_2.html#SEC22) and find that we need:
+
+- `-mcpu=cortex-m0`: to tell gcc our target CPU's architecture
+
+- `-mthumb`: to tell gcc only to use the thumb instruction set (ARM has multiple ISAs) and the [cortex-m0](https://developer.arm.com/products/processors/cortex-m/cortex-m0-plus) only supports Thumb/Thumb-2 instructions.
+
+- `-msoft-float`: to tell gcc that our target has no floating point unit (FPU) and float operations need to be simulated by other instructions.
+
+Other recommended flags:
+
+- `-g`: Produce debug symbols.
+
+- `-Wall`: Tell gcc to let us know if something seems fishy.
+
+- `-Wextra`: Tell gcc that we REALLY want to know if something seems fishy. There are still other warning that can be set, they can be found in the gcc [docs](https://gcc.gnu.org/onlinedocs/gcc-4.8.4/gcc/Warning-Options.html).
+
+# Header / Device Resources
+
+Most embedded device resources are mapped to memory addresses. To interact with the resources in C, most hardware vendors will provide a header file(s) defining specific addresses and structures for the user. All that's needed is to include the header and pour over their thousand page PDFs to find which bits you to to mess with for each resource!
+
+Being efficient at searching (ctrl-f, regexp) __both__ the headers and documentation, is invaluable to embedded development.
+
+The quality of supplied headers is not always fantastic, but it's understandably difficult to maintain headers for the huge variety of chips that these guys make.
+
+The STM32F031K6T6's headers were found without too much trouble in ST's [STM32Cube](https://www.element14.com/community/docs/DOC-79590/l/stm32-nucleo-32-development-board-with-stm32f031k6t6-mcu-supports-arduino-connectivity) software bundle (`find <directory-to-search> --name "*stm32f0*.h"` was very useful). ST's headers have annoying include dependencies and you have to make sure that your specific device's symbol is defined. The process is still much better than writing your own headers!
 
 # Reset Handler
 
@@ -64,48 +96,67 @@ The reset handler is what sets up all of your program's data and starts executin
 
 The STM32F031's reset handler was found without too much trouble in ST's [STM32Cube](https://www.element14.com/community/docs/DOC-79590/l/stm32-nucleo-32-development-board-with-stm32f031k6t6-mcu-supports-arduino-connectivity) software bundle.
 
-See the Makefile section for reset handler usage.
-
 # Linker
 
 The linker is what glues all of the symbols, data, and code from each file in the program into a single executable/library. Writing a linker script, like the reset handler, is something that doesn't need to be mucked with in the general case. Most architectures have common section configurations (ABIs) and only the memory sizes need to be modified.
 
-For our specific board, the linker script was lifted and modified from a [blog](http://hertaville.com/a-sample-linker-script.html).
+For our specific board, the linker script was lifted and modified from a [blog](http://hertaville.com/a-sample-linker-script.html) (changed the RAM and FLASH sizes).
 
-See the Makefile section for a linking example.
+For linking gcc will be used again but with a different set of flags. Because the required device information is in the linker script and object files, we don't need many flags at all.
+
+`arm-none-eabi-gcc -T <linker-script>.ld --specs=nosys.specs`
+
+- `-T <linker-script>.ld`: tell gcc where to find the linker script
+
+- `-specs=nosys.specs`: tell gcc that we will not be using system calls
 
 # Programming and Debugging
 
-At some point your code has to be put onto a device, and you may want some help from a debugger. Development boards don't always have great programming and debugging support. Arduino being the most notable. Hopefully your specific board has a good debugger and it is supported by [OpenOCD](http://openocd.org/). Boards that don't have good support should generally be avoided.
+At some point your code has to be put onto a device, and you may want some help from a debugger. Development boards don't always have great programming and debugging support. Arduino being the most notable. Hopefully your specific board has a good debugger and it is supported by [OpenOCD](http://openocd.org/). Boards/chips that don't have good support should generally be avoided.
 
 The Nucleo-32 board comes with the ST-LINK/V2-1 debugger/programmer, and is well supported by OpenOCD and GDB.
 
-OpenOCD [documentation](http://openocd.org/documentation/) can be a slog, but if you have a popular board it may be relatively painless.
+If you have a popular board/chip, setup may be relatively painless. Otherwise writing custom configurations may not be that fun (you'll actually have to learn how OpenOCD works).
 
-I generally place rules in Makefiles for programming to make life easier.
+The quick and dirty and guide is:
+
+- Program with: 
+  
+  ```shell
+    sudo openocd \
+      -f <path-to-interface>.cfg \
+      -f <path-to-chip>.cfg \
+      -c "program <path-to-executable> verify reset exit"
+  ```
+
+- Debug with:
+  
+  ```shell
+    (sudo openocd -f <path-to-interface>.cfg -f <path-to-chip>.cfg &); \
+    arm-none-eabi-gcc <path-to-elf> -ex "target remote localhost:3333; load"; \
+    sudo kill openocd
+  ```
+
+  * launch OpenOCD process
+
+  * connect to the st-link's gdb server and load the debug symbols
+
+  * close OpenOCD when finished
 
 # Makefiles / Building
 
-The Makefile is the crux of this workflow style. In it will be the commands for:
+The Makefile is the crux of this work-flow. Typing in all the different commands, or even writing a new script for every project would be tedious. In the example [Makefile][], I put all the commands described previously. The process makes development much easier and gives fine grained control over the build process.
 
-- Compiling
+Take a look at the provided example. The example uses all of the information in this document for rules to build/program/debug a single blink project. The comments should be descriptive enough to figure out what's going on. Otherwise take a peak at some of the guides in the [compendium][].
 
-- Linking
-
-- Flashing
-
-- Debugging
-
-More details will be added later. See the example for now.
-
-# Header / Device Resources
-
-Most embedded device resources are mapped to memory addresses. To interact with the resources in C, most hardware vendors will provide a header file defining specific addresses and structures for the user. All that's needed is to include the header and pour over their thousand page PDFs to find which bits you to to mess with for each resource!
-
-The STM32F031K6T6's header was found without too much trouble in ST's [STM32Cube](https://www.element14.com/community/docs/DOC-79590/l/stm32-nucleo-32-development-board-with-stm32f031k6t6-mcu-supports-arduino-connectivity) software bundle.
+Writing your makefile in a way that will be easy to change depending on the project/device will save time in the long run.
 
 # Git
 
 Don't waste time by losing, overwriting, and transporting pieces of your projects. Use git.
 
 [Tutorial](https://try.github.io/levels/1/challenges/1)
+
+[Makefile]: asdf
+
+[compendium][]
