@@ -110,6 +110,10 @@ For linking gcc will be used again but with a different set of flags. Because th
 
 - `-specs=nosys.specs`: tell gcc that we will not be using system calls
 
+---
+
+_note:_ if nosys.specs isn't found try installing `arm-none-eabi-newlib` from you package manager
+
 # Programming and Debugging
 
 At some point your code has to be put onto a device, and you may want some help from a debugger. Development boards don't always have great programming and debugging support. Arduino being the most notable. Hopefully your specific board has a good debugger and it is supported by [OpenOCD](http://openocd.org/). Boards/chips that don't have good support should generally be avoided.
